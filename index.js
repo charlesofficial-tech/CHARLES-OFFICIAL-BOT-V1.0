@@ -23,9 +23,9 @@ async function startBot() {
     const sock = makeWASocket({ version, logger: pino({ level: 'silent' }), printQRInTerminal: false, auth: state, browser: ["Ubuntu", "Chrome", "20.0.04"], syncFullHistory: false, markOnlineOnConnect: false });
     let pairingRequested = false;
     sock.ev.on('creds.update', saveCreds);
-    sock.ev.on('connection.update', async (update) => {
+    sock.ev.on('connection.update', async (update) => { console.log('STATUS:', update.connection);
         const { connection, lastDisconnect } = update;
-        if (!sock.authState.creds.registered && !pairingRequested && connection === 'open') {
+        if (!sock.authState.creds.registered && !pairingRequested && connection === 'connecting') {
             pairingRequested = true; await delay(3000);
             try {
                 let code = await sock.requestPairingCode(PHONE);
