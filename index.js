@@ -126,7 +126,7 @@ async function startBot() {
         }
 
         
-        // === V5 NEW COMMANDS THAT WORK ===
+        if(command==='id'){ return reply('YOUR ID: '+sender); } // === V5 NEW COMMANDS THAT WORK ===
         if (command === 'dice') { const d = Math.floor(Math.random()*6)+1; return reply(`🎲 *DICE ROLL*\n\nYou rolled: ${d} ${d===6?'🎉 JACKPOT!':''}`); }
         if (command === 'coinflip' || command === 'flip') { const c = Math.random()>0.5?'HEADS 🪙':'TAILS 🪙'; return reply(`🪙 *COIN FLIP*\n\nResult: ${c}`); }
         if (command === 'truth') { const arr=["What is your biggest secret?","Who is your crush?","Have you ever lied to your best friend?","What is your most embarrassing moment?","Who do you stalk on WhatsApp?"]; return reply(`😏 *TRUTH*\n\n${arr[Math.floor(Math.random()*arr.length)]}`); }
