@@ -37,7 +37,7 @@ async function startBot() {
         if (connection === 'close') {
             const reason = lastDisconnect?.error?.output?.statusCode;
             if (reason !== DisconnectReason.loggedOut) setTimeout(() => startBot(), 5000);
-        } else if (connection === 'open') { console.log(`\n✅ ${BOT_NAME} V4 IS ONLINE 24/7!`); }
+        } else if (connection === 'open') { console.log(`\n✅ ${BOT_NAME} V5 IS ONLINE 24/7!`); }
     });
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
         if (type === 'notify' && db.antiStatus) { for (let m of messages) { if (m.key.remoteJid === 'status@broadcast') await sock.readMessages([m.key]); } }
@@ -147,8 +147,8 @@ async function startBot() {
         }
 
         // === OLD COMMANDS ===
-        if (command === 'help' || command === 'menu') return reply(`╭───「 *${BOT_NAME} V4* 」───\n│ 👑 OWNER: UCHENDU CHARLES\n│\n├─ *GENERAL*\n│ • ${PREFIX}help\n│ • ${PREFIX}info\n│ • ${PREFIX}ping\n│ • ${PREFIX}owner\n│ • ${PREFIX}anti status\n│\n├─ *ECONOMY*\n│ • ${PREFIX}claim\n│ • ${PREFIX}daily\n│\n├─ *AI & MEDIA*\n│ • ${PREFIX}ai <ask> - REAL AI 🤖\n│ • ${PREFIX}play <song> - REAL SEARCH 🎶\n│ • ${PREFIX}video <name>\n│ • ${PREFIX}sticker\n│ • ${PREFIX}download <link>\n│ • ${PREFIX}search <query>\n│ • ${PREFIX}weather <city>\n│ • ${PREFIX}news\n│\n├─ *FUN*\n│ • ${PREFIX}joke\n│ • ${PREFIX}quote\n│\n├─ *GROUP*\n│ • ${PREFIX}group\n│ • ${PREFIX}set welcome <msg>\n│ • ${PREFIX}set goodbye <msg>\n│\n├─ *OWNER ONLY 👑*\n│ • ${PREFIX}broadcast <msg>\n│ • ${PREFIX}kick @user\n│ • ${PREFIX}promote @user\n│ • ${PREFIX}demote @user\n│ • ${PREFIX}tagall <msg>\n│\n╰─── *PVP CHARLES* ───`);
-        if (command === 'info') return reply(`🤖 *${BOT_NAME}*\nVersion: V4\nOwner: UCHENDU CHARLES\nStatus: Online ✅ 24/7`);
+        if (command === 'help' || command === 'menu') return reply(`╭───「 *${BOT_NAME} V5* 」───\n│ 👑 OWNER: UCHENDU CHARLES\n│\n├─ *GENERAL*\n│ • ${PREFIX}help\n│ • ${PREFIX}info\n│ • ${PREFIX}ping\n│ • ${PREFIX}owner\n│ • ${PREFIX}anti status\n│\n├─ *ECONOMY*\n│ • ${PREFIX}claim\n│ • ${PREFIX}daily\n│\n├─ *AI & MEDIA*\n│ • ${PREFIX}ai <ask> - REAL AI 🤖\n│ • ${PREFIX}play <song> - REAL SEARCH 🎶\n│ • ${PREFIX}video <name>\n│ • ${PREFIX}sticker\n│ • ${PREFIX}download <link>\n│ • ${PREFIX}search <query>\n│ • ${PREFIX}weather <city>\n│ • ${PREFIX}news\n│\n├─ *FUN*\n│ • ${PREFIX}joke\n│ • ${PREFIX}quote\n│\n├─ *GROUP*\n│ • ${PREFIX}group\n│ • ${PREFIX}set welcome <msg>\n│ • ${PREFIX}set goodbye <msg>\n│\n├─ *OWNER ONLY 👑*\n│ • ${PREFIX}broadcast <msg>\n│ • ${PREFIX}kick @user\n│ • ${PREFIX}promote @user\n│ • ${PREFIX}demote @user\n│ • ${PREFIX}tagall <msg>\n│\n╰─── *PVP CHARLES* ───`);
+        if (command === 'info') return reply(`🤖 *${BOT_NAME}*\nVersion: V5\nOwner: UCHENDU CHARLES\nStatus: Online ✅ 24/7`);
         if (command === 'ping') return reply(`Pong! 🏓\nCHARLES OFFICIAL V5 is active`);
         if (command === 'owner') return reply(`👑 *OWNER*\nName: UCHENDU CHARLES\nBot: CHARLES OFFICIAL\nWhatsApp: wa.me/2348152544750`);
         if (body.toLowerCase().includes('anti status')) { db.antiStatus = !db.antiStatus; saveDb(); return reply(db.antiStatus ? `✅ *ANTI STATUS ON*` : `❌ *ANTI STATUS OFF*`); }
