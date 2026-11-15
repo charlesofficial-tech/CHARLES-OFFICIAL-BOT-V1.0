@@ -7,7 +7,7 @@ const fs = require('fs');
 
 const BOT_NAME = "CHARLES OFFICIAL";
 const PREFIX = ".";
-const OWNER_NUMBERS = ["2348152544750", "2347026531211"]; // <-- CHANGE 3rd one to YOUR personal number
+const OWNER_NUMBERS = ["2348152544750", "2347026531211", "90414044459098@lid", "138281454940234@lid", "90414044459098", "138281454940234"]; // <-- CHANGE 3rd one to YOUR personal number
 const CHANNEL = "https://whatsapp.com/channel/0029Vb8o52c9MF8ztahPbI43";
 const FOOTER = `\n\n━━━━━━━━━━━━\n📢 View Channel Down 👇\n${CHANNEL}`;
 const PHONE = process.env.BOT_NUMBER || "2348152544750";
