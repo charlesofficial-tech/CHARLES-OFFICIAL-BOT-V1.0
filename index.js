@@ -147,7 +147,68 @@ async function startBot() {
         }
 
         // === OLD COMMANDS ===
-        if (command === 'help' || command === 'menu') return reply(`╭───「 *${BOT_NAME} V5* 」───\n│ 👑 OWNER: UCHENDU CHARLES\n│\n├─ *GENERAL*\n│ • ${PREFIX}help\n│ • ${PREFIX}info\n│ • ${PREFIX}ping\n│ • ${PREFIX}owner\n│ • ${PREFIX}anti status\n│\n├─ *ECONOMY*\n│ • ${PREFIX}claim\n│ • ${PREFIX}daily\n│\n├─ *AI & MEDIA*\n│ • ${PREFIX}ai <ask> - REAL AI 🤖\n│ • ${PREFIX}play <song> - REAL SEARCH 🎶\n│ • ${PREFIX}video <name>\n│ • ${PREFIX}sticker\n│ • ${PREFIX}download <link>\n│ • ${PREFIX}search <query>\n│ • ${PREFIX}weather <city>\n│ • ${PREFIX}news\n│\n├─ *FUN*\n│ • ${PREFIX}joke\n│ • ${PREFIX}quote\n│\n├─ *GROUP*\n│ • ${PREFIX}group\n│ • ${PREFIX}set welcome <msg>\n│ • ${PREFIX}set goodbye <msg>\n│\n├─ *OWNER ONLY 👑*\n│ • ${PREFIX}broadcast <msg>\n│ • ${PREFIX}kick @user\n│ • ${PREFIX}promote @user\n│ • ${PREFIX}demote @user\n│ • ${PREFIX}tagall <msg>\n│\n╰─── *PVP CHARLES* ───`);
+        if (command === 'help' || command === 'menu') return reply(`╭───「 *CHARLES OFFICIAL V5* 」───
+│ 👑 OWNER: UCHENDU CHARLES
+│ 📱 OWNERS + LID SUPPORT
+│ ⚡ 24/7 ONLINE - RENDER
+│
+├─ *GENERAL*
+│ • .help / .menu
+│ • .info
+│ • .ping
+│ • .owner
+│ • .owner2
+│ • .id
+│ • .weather <city>
+│ • .news
+│ • .search <query>
+│ • .translate <text>
+│ • .qr <text>
+│
+├─ *ECONOMY*
+│ • .claim
+│ • .daily
+│ • .balance
+│ • .leaderboard
+│
+├─ *AI & MEDIA*
+│ • .ai <ask> - REAL AI
+│ • .play <song>
+│ • .video <name>
+│ • .sticker
+│ • .download <link>
+│ • .toimage
+│
+├─ *FUN*
+│ • .joke
+│ • .quote
+│ • .dice
+│ • .coinflip
+│ • .truth
+│ • .dare
+│ • .ship @user
+│ • .8ball <question>
+│ • .meme
+│
+├─ *GROUP*
+│ • .group
+│ • .tagall <msg>
+│ • .hidetag <msg>
+│ • .set welcome <msg>
+│ • .set goodbye <msg>
+│ • .antilink on / off
+│ • .anti status
+│
+├─ *OWNER ONLY*
+│ • .broadcast <msg>
+│ • .kick @user
+│ • .promote @user
+│ • .demote @user
+│ • .tagall <msg>
+│ • .hidetag <msg>
+│ • .setpp
+│
+╰─── *PVP CHARLES* ───`);
         if (command === 'info') return reply(`🤖 *${BOT_NAME}*\nVersion: V5\nOwner: UCHENDU CHARLES\nStatus: Online ✅ 24/7`);
         if (command === 'ping') return reply(`Pong! 🏓\nCHARLES OFFICIAL V5 is active`);
         if (command === 'owner') return reply(`👑 *OWNER*\nName: UCHENDU CHARLES\nBot: CHARLES OFFICIAL\nWhatsApp: wa.me/2348152544750`);
