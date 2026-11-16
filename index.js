@@ -23,31 +23,21 @@ async function start(){
   });
   sock.ev.on('messages.upsert', async ({messages})=>{
     const m = messages[0];
-    if(!m.message || m.key.fromMe) return;
+    if(!m.message) return;
+    // ALLOW owner messages even if fromMe
     const from = m.key.remoteJid;
     const text = m.message.conversation || m.message.extendedTextMessage?.text || m.message.imageMessage?.caption || '';
+    if(!text) return;
     const cmd = text.trim().toLowerCase();
-    console.log('Got:', text);
+    console.log('Got:', text, '| fromMe:', m.key.fromMe, '| from:', from);
     if(cmd === '.menu' || cmd === '.help'){
-      await sock.sendMessage(from, { text: `*╭── CHARLES OFFICIAL V1.1 ──╮*\n\n*🔥 MAIN MENU*\n│ .menu - Show menu\n│ .ping - Speed test\n│ .alive - Bot alive?\n│ .owner - Owner info\n│ .info - Bot info\n│ .time - Lagos time\n\n*🎨 MEDIA*\n│ .sticker - Reply image + .sticker\n\n*Made by CHARLES OFFICIAL*\n*╰──────────────────────╯*` }, { quoted: m });
+      await sock.sendMessage(from, { text: `*╭── CHARLES OFFICIAL V1.1 ──╮*\n\n*🔥 MAIN MENU*\n│ .menu - Show menu\n│ .ping - Speed test\n│ .alive - Bot alive?\n│ .owner - Owner info\n│ .info - Bot info\n│ .time - Lagos time\n│ .sticker - Reply image + .sticker\n\n*Made by CHARLES OFFICIAL*\n*╰──────────────────────╯*` }, { quoted: m });
     }
     if(cmd === '.ping') await sock.sendMessage(from, { text: 'Pong! 🏓 *V1.1* - Speed: Fast ⚡' }, { quoted: m });
     if(cmd === '.alive') await sock.sendMessage(from, { text: '*CHARLES OFFICIAL V1.1* dey ALIVE ✅' }, { quoted: m });
-    if(cmd === '.owner') await sock.sendMessage(from, { text: '*OWNER INFO*\nName: CHARLES OFFICIAL\nNumber: +2348152544750\nBot: V1.1' }, { quoted: m });
-    if(cmd === '.info') await sock.sendMessage(from, { text: '*BOT INFO*\nName: CHARLES OFFICIAL\nVersion: V1.1\nStatus: Online ✅\nPlatform: Render' }, { quoted: m });
+    if(cmd === '.owner') await sock.sendMessage(from, { text: 'Owner: CHARLES OFFICIAL\nNumber: +2348152544750' }, { quoted: m });
+    if(cmd === '.info') await sock.sendMessage(from, { text: '*BOT INFO*\nName: CHARLES OFFICIAL\nVersion: V1.1\nStatus: Online ✅' }, { quoted: m });
     if(cmd === '.time') await sock.sendMessage(from, { text: '🕐 Lagos Time: ' + new Date().toLocaleString('en-NG',{timeZone:'Africa/Lagos'}) }, { quoted: m });
-    if(cmd === '.sticker'){
-      const quoted = m.message.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
-      if(quoted){
-        await sock.sendMessage(from, { text: 'Creating sticker... ⏳' }, { quoted: m });
-        const stream = await downloadContentFromMessage(quoted, 'image');
-        let buffer = Buffer.from([]);
-        for await (const chunk of stream) buffer = Buffer.concat([buffer, chunk]);
-        await sock.sendMessage(from, { sticker: buffer }, { quoted: m });
-      } else {
-        await sock.sendMessage(from, { text: 'Reply one image with *.sticker*' }, { quoted: m });
-      }
-    }
   });
 }
 start();
