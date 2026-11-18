@@ -1,13 +1,11 @@
 require('./keepalive.js');
-require("http").createServer((req,res)=>res.end("CHARLES OFFICIAL ACTIVE")).listen(process.env.PORT||8000); const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+
 const pino = require('pino');
-const express = require('express');
 const fs = require('fs');
 const yts = require('yt-search');
 const ytdl = require('@distube/ytdl-core').default || require('@distube/ytdl-core');
 const { execFile } = require('child_process');
 const axios = require('axios');
-const app = express();
 app.use(express.json());
 let SETTINGS = { mode:'private', botDM:true, welcomeOn:true, goodbyeOn:true, welcomeMsg:'Welcome @user to *CHARLES OFFICIAL GROUP* 🔥\n\nType .menu for commands\n\n🤖 CHARLES OFFICIAL', goodbyeMsg:'Goodbye @user 👋 We go miss you!\n\n🤖 CHARLES OFFICIAL', sudo:['2348152544750'] };
 let JAILED = [];
@@ -21,15 +19,12 @@ if(process.env.SESSION_ID){
     console.log('✅ Session restored from ENV'); }catch(e){ console.log('Session restore fail', e.message); }
 }
 let sockGlobal=null;
-app.get('/', (req,res)=> res.send(`<h1>CHARLES OFFICIAL</h1><p>Bot is running</p>`));
-app.get('/pair', async (req,res)=>{
   const num=(req.query.number||'').replace(/[^0-9]/g,'');
   if(!num) return res.json({error:'Put number'});
   if(!sockGlobal) return res.json({error:'Bot not ready'});
   try{ const code=await sockGlobal.requestPairingCode(num); return res.json({code}); }catch(e){ return res.json({error:e.message}); }
 });
-app.get('/get-session', (req,res)=>{ try{ const c=fs.readFileSync('session/creds.json','utf-8'); return res.send(Buffer.from(c).toString('base64')); }catch(e){ return res.send('No session yet'); } });
-app.listen(process.env.PORT || 3000, ()=> console.log('Port open CHARLES OFFICIAL V4'));
+
 async function start(){
 console.log('>>> STARTING BOT...');
   const { version } = await fetchLatestBaileysVersion();
