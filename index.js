@@ -4,6 +4,7 @@ const express = require('express');
 const fs = require('fs');
 const yts = require('yt-search');
 const ytdl = require('@distube/ytdl-core').default || require('@distube/ytdl-core');
+const { execFile } = require('child_process');
 const axios = require('axios');
 const app = express();
 app.use(express.json());
@@ -127,12 +128,14 @@ let _mc = m.message.ephemeralMessage?.message || m.message.viewOnceMessage?.mess
       try{
         const search = await yts(text); const video = search.videos[0];
         if(!video) return reply('❌ Song not found');
-        const r = await axios.get(`https://api.zenzxz.my.id/api/downloader/ytmp3?url=${encodeURIComponent(video.url)}`);
-        const dl = r.data.download_url || r.data.result?.download_url || r.data.result?.url || r.data.result?.audio || r.data.url;
-        if(!dl) return reply('❌ Play failed: No download link from API');
-        const buf = (await axios.get(dl,{responseType:'arraybuffer', headers:{'User-Agent':'Mozilla/5.0'}})).data;
-        await sock.sendMessage(from, { audio: Buffer.from(buf), mimetype:'audio/mpeg', fileName: video.title+'.mp3' }, { quoted: m });
-      }catch(e){ return reply('❌ Play failed, try again: '+e.message); }
+        const fs = require('fs');
+        const out = '/tmp/play_'+Date.now()+'.m4a';
+        await new Promise((res,rej)=>{
+          execFile('yt-dlp',['-f','bestaudio[ext=m4a]/18/best','-o',out,'--no-playlist','--extractor-args','youtube:player_client=android',video.url],(e,stdout,stderr)=>{ if(e) rej(new Error(stderr||e.message)); else res(); });
+        });
+        const buf = fs.readFileSync(out); fs.unlinkSync(out);
+        await sock.sendMessage(from, { audio: buf, mimetype:'audio/mp4', fileName: video.title+'.m4a' }, { quoted: m });
+      }catch(e){ return reply('❌ Play failed: '+e.message); }
       return;
     }
     if(cmd==='video'){
@@ -141,8 +144,9 @@ let _mc = m.message.ephemeralMessage?.message || m.message.viewOnceMessage?.mess
       try{
         const search = await yts(text); const video = search.videos[0];
         if(!video) return reply('❌ Video not found');
-        const r = await axios.get(`https://api.zenzxz.my.id/api/downloader/ytmp4?url=${encodeURIComponent(video.url)}`);
-        const dl = r.data.download_url || r.data.result?.download_url || r.data.result?.url || r.data.result?.video || r.data.url;
+        let dl=null;
+        const apis=[`https://api.vreden.my.id/api/ytmp4?url=${encodeURIComponent(video.url)}`,`https://api.ryzendesu.vip/api/downloader/ytmp4?url=${encodeURIComponent(video.url)}`];
+        for(const api of apis){ try{ const r=await axios.get(api,{timeout:20000}); dl=r.data.download_url||r.data.result?.download_url||r.data.result?.url||r.data.result?.video||r.data.result?.download||r.data.url||r.data.download; if(dl) break; }catch(e){ console.log('video api fail',api,e.message); } }
         if(!dl) return reply('❌ Video failed: No download link');
         const buf = (await axios.get(dl,{responseType:'arraybuffer', headers:{'User-Agent':'Mozilla/5.0'}})).data;
         await sock.sendMessage(from, { video: Buffer.from(buf), caption:`🎬 ${video.title}\n\n🤖 CHARLES OFFICIAL` }, { quoted: m });
