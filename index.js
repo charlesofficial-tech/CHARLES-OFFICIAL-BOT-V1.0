@@ -1,3 +1,4 @@
+require('./keepalive.js');
 require("http").createServer((req,res)=>res.end("CHARLES OFFICIAL ACTIVE")).listen(process.env.PORT||8000); const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const express = require('express');
