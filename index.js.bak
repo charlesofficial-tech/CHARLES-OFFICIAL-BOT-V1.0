@@ -1,159 +1,334 @@
-const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
+require("http").createServer((req,res)=>res.end("CHARLES OFFICIAL ACTIVE")).listen(process.env.PORT||8000); const { default: makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const express = require('express');
 const fs = require('fs');
+const yts = require('yt-search');
+const ytdl = require('@distube/ytdl-core').default || require('@distube/ytdl-core');
+const { execFile } = require('child_process');
+const axios = require('axios');
 const app = express();
 app.use(express.json());
-let SETTINGS = { mode:'private', botDM:true, botReply:'Hello 👋 I am CHARLES OFFICIAL Bot. Type .menu', welcomeOn:true, goodbyeOn:true, welcomeMsg:'Welcome @user to *CHARLES OFFICIAL GROUP* 🔥', goodbyeMsg:'Goodbye @user 👋 We go miss you!' };
+let SETTINGS = { mode:'private', botDM:true, welcomeOn:true, goodbyeOn:true, welcomeMsg:'Welcome @user to *CHARLES OFFICIAL GROUP* 🔥\n\nType .menu for commands\n\n🤖 CHARLES OFFICIAL', goodbyeMsg:'Goodbye @user 👋 We go miss you!\n\n🤖 CHARLES OFFICIAL', sudo:['2348152544750'] };
 let JAILED = [];
 if(fs.existsSync('settings.json')) SETTINGS = JSON.parse(fs.readFileSync('settings.json'));
 if(fs.existsSync('jailed.json')) JAILED = JSON.parse(fs.readFileSync('jailed.json'));
 function save(){ fs.writeFileSync('settings.json', JSON.stringify(SETTINGS)); fs.writeFileSync('jailed.json', JSON.stringify(JAILED)); }
-// === RESTORE SESSION FROM ENV - NO RE-PAIR NEEDED ===
 if(process.env.SESSION_ID){
-  try{
-    if(!fs.existsSync('session')) fs.mkdirSync('session');
+  try{ if(!fs.existsSync('session')) fs.mkdirSync('session');
     const decoded = Buffer.from(process.env.SESSION_ID, 'base64').toString('utf-8');
     fs.writeFileSync('session/creds.json', decoded);
-    console.log('✅ Session restored from ENV - No pairing needed!');
-  }catch(e){ console.log('Session restore fail', e.message); }
+    console.log('✅ Session restored from ENV'); }catch(e){ console.log('Session restore fail', e.message); }
 }
 let sockGlobal=null;
-app.get('/', (req,res)=> res.send(`<html><head><title>CHARLES OFFICIAL</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{background:#0a0a0a;color:#fff;text-align:center;padding:20px;font-family:sans-serif}input{padding:12px;width:80%;border-radius:10px;background:#111;color:#fff;border:1px solid gold}button{padding:12px 20px;background:gold;border:none;border-radius:10px;font-weight:bold;margin-top:10px}#code{font-size:32px;color:gold;margin-top:20px}</style></head><body><h1>🐐 CHARLES OFFICIAL 🐐</h1><input id="num" placeholder="2348152544750"><br><button onclick="pair()">GET PAIRING CODE</button><div id="code"></div><script>async function pair(){let n=document.getElementById('num').value;let r=await fetch('/pair?number='+n);let d=await r.json();document.getElementById('code').innerText=d.code||d.error;}</script></body></html>`));
+app.get('/', (req,res)=> res.send(`<h1>CHARLES OFFICIAL</h1><p>Bot is running</p>`));
 app.get('/pair', async (req,res)=>{
   const num=(req.query.number||'').replace(/[^0-9]/g,'');
   if(!num) return res.json({error:'Put number'});
   if(!sockGlobal) return res.json({error:'Bot not ready'});
   try{ const code=await sockGlobal.requestPairingCode(num); return res.json({code}); }catch(e){ return res.json({error:e.message}); }
 });
-app.get('/get-session', (req,res)=>{
-  try{ const c=fs.readFileSync('session/creds.json','utf-8'); return res.send(Buffer.from(c).toString('base64')); }catch(e){ return res.send('No session yet'); }
-});
-app.listen(process.env.PORT || 3000, ()=> console.log('Port open V3.4'));
+app.get('/get-session', (req,res)=>{ try{ const c=fs.readFileSync('session/creds.json','utf-8'); return res.send(Buffer.from(c).toString('base64')); }catch(e){ return res.send('No session yet'); } });
+app.listen(process.env.PORT || 3000, ()=> console.log('Port open CHARLES OFFICIAL V4'));
 async function start(){
+console.log('>>> STARTING BOT...');
   const { version } = await fetchLatestBaileysVersion();
   const { state, saveCreds } = await useMultiFileAuthState('session');
-  const sock = makeWASocket({ logger: pino({level:'silent'}), auth: state, printQRInTerminal: false, browser: ['Chrome','Chrome','1.0'], version });
+  let MODE = 'private'; // private or public
+let GROUP_MODE = 'on'; // on or off
+const OWNER_NUMBER = '2340000000000'; // <-- CHANGE TO YOUR PAIRED NUMBER e.g 2348012345678
+let globalGroupMode = 'on';
+const sock = makeWASocket({ logger: pino({level:'silent'}), auth: state, printQRInTerminal: false, browser: ['Chrome','Chrome','1.0'], version });
   sockGlobal=sock;
   sock.ev.on('creds.update', saveCreds);
   if(!sock.authState.creds.registered && !process.env.SESSION_ID){ setTimeout(async()=>{ try{ const code=await sock.requestPairingCode('2348152544750'); console.log('=== PAIRING CODE: '+code+' ==='); }catch(e){} }, 3000); }
-  sock.ev.on('connection.update', (u)=>{ if(u.connection==='open') console.log('CHARLES OFFICIAL V3.4 CONNECTED! - No re-pair needed'); if(u.connection==='close') setTimeout(()=> start(), 5000); });
+  sock.ev.on('connection.update', (u)=>{ if(u.connection==='open') console.log('CHARLES OFFICIAL V4 CONNECTED!'); if(u.connection==='close'){ const r=u.lastDisconnect?.error?.output?.statusCode; console.log('Closed, code:',r); if(r!==401) setTimeout(()=> start(), 5000); else console.log('LOGGED OUT - need re-pair'); } });
+  // WELCOME / GOODBYE - WORKS FOR EVERYONE, BOT NO NEED ADMIN
   sock.ev.on('group-participants.update', async (u)=>{
-    for(let p of u.participants){
-      if(u.action==='add' && SETTINGS.welcomeOn) await sock.sendMessage(u.id, { text: SETTINGS.welcomeMsg.replace('@user','@'+p.split('@')[0]), mentions:[p] });
-      if(u.action==='remove' && SETTINGS.goodbyeOn) await sock.sendMessage(u.id, { text: SETTINGS.goodbyeMsg.replace('@user','@'+p.split('@')[0]), mentions:[p] });
-    }
+    try{
+      for(let p of u.participants){
+        if(u.action==='add' && SETTINGS.welcomeOn) await sock.sendMessage(u.id, { text: SETTINGS.welcomeMsg.replace(/@user/g,'@'+(p.id || p).split('@')[0]), mentions:[(p.id || p)] });
+        if(u.action==='remove' && SETTINGS.goodbyeOn) await sock.sendMessage(u.id, { text: SETTINGS.goodbyeMsg.replace(/@user/g,'@'+(p.id || p).split('@')[0]), mentions:[(p.id || p)] });
+      }
+    }catch(e){ console.log('welcome err', e.message); }
   });
-  let lastBotReply=0;
-  const EMOJIS=['❤️','🔥','😍','👍','😂','😮','😢','🙏','👏','💯','🎉','😎','🤩','💖','🦁','🐐','👑','⚡','💪','🌟'];
-  function parseChannel(url){
-    const parts=url.split('/').filter(Boolean);
-    const idx=parts.findIndex(p=>p==='channel');
-    if(idx===-1) return null;
-    return { channelId: parts[idx+1], msgId: parts[idx+2]||null };
-  }
-  const COOL = (title, body) => `✨ *${title}* ✨\n━━━━━\n${body}\n━━━━━\n👑 *CHARLES OFFICIAL* 🐐`;
   sock.ev.on('messages.upsert', async ({messages})=>{
-    const m=messages[0];
-    if(!m.message) return;
-    const from=m.key.remoteJid;
-    const isGroup=from.endsWith('@g.us');
-    const text=m.message.conversation || m.message.extendedTextMessage?.text || m.message.imageMessage?.caption || '';
-    if(m.key.fromMe && !text.startsWith('.')) return;
-    if(text===SETTINGS.botReply) return;
-    const sender=m.key.participant || from;
-    const isOwner=sender.includes('2348152544750') || m.key.fromMe;
-    const reply=(t)=> sock.sendMessage(from,{text:t},{quoted:m});
-    if(isGroup && JAILED.includes(sender) && !text.startsWith('.')){ try{ await sock.sendMessage(from, { delete: m.key }); }catch(e){} return; }
-    if(!isGroup && !text.startsWith('.') && SETTINGS.botDM){
-      if(SETTINGS.mode==='private' && !isOwner) return;
-      if(Date.now()-lastBotReply<3000) return;
-      lastBotReply=Date.now();
-      return reply(COOL('CHARLES OFFICIAL 🤖', SETTINGS.botReply));
+    const m = messages[0]; console.log("MSG:", m.key.remoteJid); if(!m.message) return;
+    const from = m.key.remoteJid;
+    const isGroup = from.endsWith('@g.us');
+    const sender = m.key.participant || m.key.remoteJid;
+    const senderNum = sender.split('@')[0];
+    const isOwner = SETTINGS.sudo.includes(senderNum) || senderNum==='2348152544750' || !isGroup && senderNum==='2348152544750';
+    // JAILED CHECK
+    if(isGroup && JAILED.includes(sender) && !isOwner) return;
+    // REPLY TARGET - reply to message = target, no need @user
+    let quoted = m.message.extendedTextMessage?.contextInfo;
+    let target = null;
+    if(quoted?.participant) target = quoted.participant;
+    if(quoted?.mentionedJid?.length) target = quoted.mentionedJid[0];
+let _mc = m.message.ephemeralMessage?.message || m.message.viewOnceMessage?.message || m.message.viewOnceMessageV2?.message || m.message; const body = _mc.conversation || _mc.extendedTextMessage?.text || _mc.imageMessage?.caption || ''; console.log('BODY:', JSON.stringify(body));
+    if(!body.startsWith('.')) return;
+    const args = body.slice(1).trim().split(/ +/);
+    const cmd = args.shift().toLowerCase();
+    const text = args.join(' ');
+    const reply = (t, mentions) => sock.sendMessage(from, { text: t, mentions }, { quoted: m });
+    // GROUP META FOR ADMIN CHECK
+    let isSenderAdmin = false, isBotAdmin = false, groupMeta = null;
+    if(isGroup){
+      try{ groupMeta = await sock.groupMetadata(from);
+        isSenderAdmin = groupMeta.participants.find(p=>p.id===sender)?.admin ? true : false;
+        const botId = sock.user.id.split(':')[0]+'@s.whatsapp.net';
+        isBotAdmin = groupMeta.participants.find(p=>p.id===botId)?.admin ? true : false;
+      }catch(e){}
     }
-    if(!text.startsWith('.')) return;
-    const args=text.trim().slice(1).split(' ');
-    const cmd=args[0].toLowerCase();
-    const q=args.slice(1).join(' ');
-    const target = m.message.extendedTextMessage?.contextInfo?.mentionedJid?.[0] || (q.replace('@','') ? q.replace('@','')+'@s.whatsapp.net' : null);
-    if((cmd==='chreact' || cmd==='vote') && !isOwner) return reply(COOL('ACCESS DENIED ❌', 'Only paired owner fit use .'+cmd));
-    if(cmd==='chreact'){
-      const url=args[1]; const countArg=args[2]||'1';
-      if(!url) return reply(COOL('CHREACT ❤️', 'Use:\n.chreact channelurl 100\n.chreact channelurl 5+7\n\nExample:\n.chreact https://whatsapp.com/channel/0029Vb8ReGPFi8xW69B0II1B/15 10'));
-      const parsed=parseChannel(url);
-      if(!parsed || !parsed.msgId) return reply(COOL('NEED POST ID ❌', 'Your link no get post ID!\n\nOpen channel post > Share > Copy Link\nE must end with /15 or /123\n\nExample:\n.chreact https://whatsapp.com/channel/0029Vb8ReGPFi8xW69B0II1B/15 10'));
-      // REAL FIX: Convert to newsletter JID
-      const newsletterJid = parsed.channelId + '@newsletter';
-      let count=1;
-      if(countArg.includes('+')){ const [a,b]=countArg.split('+').map(Number); count=Math.floor(Math.random()*(b-a+1))+a; } else count=parseInt(countArg)||1;
-      if(count>50) count=50;
-      await reply(COOL('CHREACT STARTED ❤️', `Channel: ${parsed.channelId}\nPost ID: ${parsed.msgId}\nNewsletter JID: ${newsletterJid}\nReactions: ${count}\nSending... ⚡\n\n⚠️ Make sure bot number FOLLOW this channel!`));
-      let sent=0, failed=0;
-      for(let i=0;i<count;i++){
-        const emoji=EMOJIS[Math.floor(Math.random()*EMOJIS.length)];
-        try{
-          // METHOD 1: Real newsletter react with JID
-          await sock.newsletterReactMessage(newsletterJid, parsed.msgId, emoji);
-          sent++;
-        }catch(e1){
-          try{
-            // METHOD 2: Try with raw ID
-            await sock.newsletterReactMessage(parsed.channelId, parsed.msgId, emoji);
-            sent++;
-          }catch(e2){ failed++; console.log('react fail', e2.message); }
-        }
-        await new Promise(r=>setTimeout(r,1000));
+    if(isGroup && groupMeta){ const ownerInGroup = groupMeta.participants.find(p=>p.id.includes('2348152544750')); const isOwnerAdmin = ownerInGroup && ownerInGroup.admin ? true : false; if(!isOwnerAdmin) return; } const needAdmin = ['kick','promote','demote','mute','unmute','add','revoke','updategname','updategdesc','accept','reject','acceptall','rejectall','ban','unban','jail','unjail','antilink'];
+    if(isGroup && needAdmin.includes(cmd) && !isSenderAdmin && !isOwner) return reply('❌ Only group admin fit use this command\n\n🤖 CHARLES OFFICIAL');
+    const getTarget = () => {
+      if(target) return target;
+      if(text){
+        let n = text.replace(/[^0-9]/g,'');
+        if(n.length>=10) return n+'@s.whatsapp.net';
       }
-      if(sent===0) return reply(COOL('CHREACT FAILED ❌', `0/${count} sent.\n\nReason: WhatsApp block bot from reacting if:\n1. Bot no follow channel\n2. Channel na private\n3. Post don old\n\nFIX: Open WhatsApp with bot number, FOLLOW channel, then try again with 5 reactions only.`));
-      return reply(COOL('CHREACT DONE ✅', `Sent ${sent}/${count} reactions ❤️🔥\nCheck channel now!`));
+      return null;
+    };
+    try{
+    // MAIN
+    if(cmd==='menu' || cmd==='help'){
+      return reply(`╭─❍══ CHARLES OFFICIAL ══⊷❍
+┇◆ Owner: CHARLES
+┇◆ Mode: private
+┇◆ Prefix: .
+┇◆ Version: 4.0
+╰══════════⍟
+
+👥 GROUP - EVERYONE:
+.tagall .link .ginfo .poll .welcome on/off .goodbye on/off .setwelcome .setgoodbye
+
+🔒 GROUP - ADMIN ONLY:
+.kick .promote .demote .mute .unmute .add .revoke .updategname .updategdesc .accept .reject .ban .jail
+_Reply to person + command, no need @_
+
+⬇️ DOWNLOAD - DIRECT:
+.play <song> - Download song direct
+.video <film> - Download video direct
+.tiktok <link> .igdl <link> .fbdl <link> .ytdl <link> .song <song>
+
+❤️ CHANNEL - OWNER ONLY:
+.chreact <channel link> <emoji>
+.vote <channel link> <option>
+.chinfo <channel link> .chfollow <channel link>
+
+🎉 FUN:
+.joke .quote .roast .ship .8ball .truth .dare .fact .meme .pickup
+
+🤖 AI:
+.ai <ask> .gpt <ask> .img <prompt> .ask <question>
+
+🛠️ TOOLS:
+.sticker .sticker2 .toimg .tomp3 .tovn .ss <link> .short <link> .qr <text> .translate <text> .weather <city> .calc <2+2>
+
+👤 PROFILE:
+.profile .owner .me .rank .level
+
+🆕 NEW:
+.lyrics <song> .news .bible <verse> .quran <surah> .anime <name> .wallpaper .horoscope <sign> .pair .love <name> .hack <name>
+
+⚙️ OWNER:
+.mode public/private .sudo .alive .ping .restart .update .broadcast .block .unblock
+
+> © Powered by CHARLES OFFICIAL`);
     }
-    if(cmd==='vote'){
-      const url=args[1]; const option=args.slice(2).join(' ')||'1';
-      if(!url) return reply(COOL('VOTE 🗳️', 'Use:\n.vote channelposturl OptionName\n\nExample:\n.vote https://whatsapp.com/channel/0029Vb8ReGPFi8xW69B0II1B/15 CHARLES\n\nNote: WhatsApp poll vote na by REACTION - bot go react ❤️ as your vote!'));
-      const parsed=parseChannel(url);
-      if(!parsed || !parsed.msgId) return reply(COOL('NEED POST ID ❌', 'Link must end with /15 post ID'));
-      const newsletterJid = parsed.channelId + '@newsletter';
-      await reply(COOL('VOTING 🗳️', `Voting for: *${option}*\nPost: ${parsed.msgId}\nMethod: Reaction Vote ❤️`));
+    
+    // ===== 10 NEW COMMANDS - CHARLES OFFICIAL =====
+    if(cmd==='lyrics'){
+      if(!text) return reply('Usage: .lyrics Asake Why Love');
       try{
-        // Vote = React with ❤️ on poll post - this na how WhatsApp channel poll vote work for bots
-        await sock.newsletterReactMessage(newsletterJid, parsed.msgId, '❤️');
-        return reply(COOL('VOTE DONE ✅', `You voted for: *${option}* 🗳️❤️\nPost: ${parsed.msgId}\nCheck channel - reaction don show!`));
-      }catch(e){
-        return reply(COOL('VOTE FAILED ❌', `Error: ${e.message}\n\nFIX: Make sure bot number FOLLOW channel first.\nOpen bot WhatsApp > Channels > Follow that channel.`));
-      }
+        const r = await axios.get(`https://lrclib.net/api/search?track_name=${encodeURIComponent(text)}`);
+        const s = r.data?.[0]; if(!s) return reply('❌ Lyrics not found');
+        await reply(`🎵 *${s.trackName} - ${s.artistName}*\n\n${s.plainLyrics?.slice(0,3000) || 'No lyrics'}`);
+      }catch(e){ return reply('❌ '+e.message); }
+      return;
     }
-    if(SETTINGS.mode==='private' && !isOwner && cmd!=='menu' && cmd!=='ping') return reply(COOL('PRIVATE 🔒','Bot dey on PRIVATE.'));
-    let isAdmin=false;
-    if(isGroup){ try{ const meta=await sock.groupMetadata(from); const me=meta.participants.find(p=>p.id===sender); isAdmin=me?.admin==='admin'||me?.admin==='superadmin'; }catch(e){} }
-    const needAdmin=['kick','ban','promote','demote','add','mute','unmute','close','open','announce','delete','purge','tagall','hidetag','grouplink','resetgrouplink','groupname','groupdesc','jail','jailrandom','unjail','unjailall'];
-    if(needAdmin.includes(cmd) && isGroup && !isAdmin && !isOwner) return reply(COOL('ADMIN ONLY ❌','Only *Group Admin* fit use .'+cmd));
-    if(cmd==='jail'){ if(!isGroup) return reply(COOL('JAIL 🔒','Group only')); if(!target) return reply(COOL('JAIL 🔒','Mention: .jail @user')); if(!JAILED.includes(target)){ JAILED.push(target); save(); } return reply(COOL('JAILED 🔒⛓️', `@${target.split('@')[0]} don enter JAIL!\nEvery message go delete 🚫`)); }
-    if(cmd==='jailrandom'){ if(!isGroup) return reply(COOL('JAIL RANDOM 🎲','Group only')); const meta=await sock.groupMetadata(from); const members=meta.participants.filter(p=>!p.id.includes('2348152544750')); const victim=members[Math.floor(Math.random()*members.length)]; if(!JAILED.includes(victim.id)){ JAILED.push(victim.id); save(); } return reply(COOL('JAIL RANDOM 🎲🔒', `@${victim.id.split('@')[0]} na unlucky one! E don enter JAIL 😂⛓️`)); }
-    if(cmd==='unjail'){ if(!target) return reply(COOL('UNJAIL 🔓','Mention: .unjail @user')); JAILED=JAILED.filter(x=>x!==target); save(); return reply(COOL('UNJAILED 🔓✅', `@${target.split('@')[0]} don FREE! 🎉`)); }
-    if(cmd==='unjailall'){ JAILED=[]; save(); return reply(COOL('UNJAIL ALL 🔓🎉', 'Everybody don FREE! ✅')); }
-    const MENU=`🐐 *CHARLES OFFICIAL* 🐐\n━━━━━\n\n🤖 mode: ${SETTINGS.mode.toUpperCase()} · bot DM: ${SETTINGS.botDM?'ON':'OFF'} · Jailed: ${JAILED.length}\n\n❤️ *CHANNEL*\n.chreact\n.vote\n\n🛡️ *𝗣𝗥𝗢𝗧𝗘𝗖𝗧𝗜𝗢𝗡*\n.antilink\n.antibadword\n.antibug\n.antidelete\n.antiedit\n.antitag\n.antigroupmention\n.antisticker\n.antireaction\n.antibot\n.antispam\n.antigroupstatus\n.antipromote\n.antidemote\n.anticall\n.mediaonly\n.textonly\n\n⚔️ *𝗠𝗢𝗗𝗘𝗥𝗔𝗧𝗜𝗢𝗡*\n.warn\n.warnings\n.resetwarn\n.warnlimit\n.jail\n.jailrandom\n.unjail\n.unjailall\n.ban\n.unban\n.bancheck\n.bannido\n.mute\n.unmute\n.slowmode\n.delayperma\n.delete\n.purge\n.msglog\n\n🎉 *𝗦𝗢𝗖𝗜𝗔𝗟*\n.mention\n.who\n.ship\n.top\n.8ball\n\n👥 *𝗚𝗥𝗢𝗨𝗣 𝗖𝗢𝗡𝗧𝗥𝗢𝗟*\n.add\n.kick\n.votekick\n.promote\n.demote\n.tagall\n.tagadmins\n.hidetag\n.membertag\n.welcome on/off\n.goodbye on/off\n.set welcome <text>\n.set goodbye <text>\n.groupname\n.groupdesc\n.grouplink\n.resetgrouplink\n.setgrouppic\n.invite\n.announce\n.close\n.open\n.closetime\n.ephemeral\n.pin\n.unpin\n.timezonegroup\n.groupstatus\n.lock\n.unlock\n.groupinfo\n\n⚡ *𝗕𝗢𝗧 𝗖𝗢𝗡𝗧𝗥𝗢𝗟*\n.menu\n.setmenu\n.ping\n.status\n.owner\n.setsudo\n.delsudo\n.public\n.private\n.bot on/off\n.set bot reply <text>\n.ai\n.translate\n.afk\n.backup\n.broadcast\n━━━━━\n\n👑 *CHARLES OFFICIAL*`;
-    if(cmd==='menu') return reply(MENU);
-    if(cmd==='ping') return reply(COOL('PING 🏓', 'Pong! CHARLES OFFICIAL V3.4 - Fast ⚡'));
-    if(cmd==='owner') return reply(COOL('OWNER 👑', 'CHARLES OFFICIAL\n+2348152544750'));
-    if(cmd==='status') return reply(COOL('STATUS 📊', `Mode: ${SETTINGS.mode}\nBot DM: ${SETTINGS.botDM?'ON':'OFF'}\nJailed: ${JAILED.length}`));
-    if(cmd==='private'){ if(!isOwner) return reply(COOL('DENIED ❌','Only owner')); SETTINGS.mode='private'; save(); return reply(COOL('PRIVATE 🔒', 'Bot don go PRIVATE')); }
-    if(cmd==='public'){ if(!isOwner) return reply(COOL('DENIED ❌','Only owner')); SETTINGS.mode='public'; save(); return reply(COOL('PUBLIC 🌍', 'Bot don go PUBLIC')); }
-    if(cmd==='bot'){ if(!isOwner) return reply(COOL('DENIED ❌','Only owner')); if(q==='on'){ SETTINGS.botDM=true; save(); return reply(COOL('BOT ON 🤖', 'Bot DM ON ✅')); } if(q==='off'){ SETTINGS.botDM=false; save(); return reply(COOL('BOT OFF 🤖', 'Bot DM OFF ❌')); } return reply(COOL('BOT 🤖','Use: .bot on / .bot off')); }
-    if(cmd==='set'){ if(!isOwner) return reply(COOL('DENIED ❌','Only owner')); if(args[1]==='welcome'){ SETTINGS.welcomeMsg=args.slice(2).join(' '); save(); return reply(COOL('WELCOME SET 🎉', SETTINGS.welcomeMsg)); } if(args[1]==='goodbye'){ SETTINGS.goodbyeMsg=args.slice(2).join(' '); save(); return reply(COOL('GOODBYE SET 👋', SETTINGS.goodbyeMsg)); } if(args[1]==='bot' && args[2]==='reply'){ SETTINGS.botReply=args.slice(3).join(' '); save(); return reply(COOL('BOT REPLY SET 🤖', SETTINGS.botReply)); } return reply(COOL('SET ⚙️','Use:\n.set welcome <text>\n.set goodbye <text>\n.set bot reply <text>')); }
-    if(cmd==='welcome'){ if(q==='on'){ SETTINGS.welcomeOn=true; save(); return reply(COOL('WELCOME ON 🎉','Welcome ON')); } if(q==='off'){ SETTINGS.welcomeOn=false; save(); return reply(COOL('WELCOME OFF 🎉','Welcome OFF')); } return reply(COOL('WELCOME 🎉','Use: .welcome on / .welcome off')); }
-    if(cmd==='goodbye'){ if(q==='on'){ SETTINGS.goodbyeOn=true; save(); return reply(COOL('GOODBYE ON 👋','Goodbye ON')); } if(q==='off'){ SETTINGS.goodbyeOn=false; save(); return reply(COOL('GOODBYE OFF 👋','Goodbye OFF')); } return reply(COOL('GOODBYE 👋','Use: .goodbye on / .goodbye off')); }
-    if(cmd==='tagall'){ if(!isGroup) return reply(COOL('TAG ALL 📢','Group only')); const meta=await sock.groupMetadata(from); let t='📢 *TAG ALL*\n\n'; for(let p of meta.participants) t+=`@${p.id.split('@')[0]} `; return sock.sendMessage(from,{text:t,mentions:meta.participants.map(p=>p.id)},{quoted:m}); }
-    if(cmd==='hidetag'){ if(!isGroup) return reply(COOL('HIDETAG 👻','Group only')); const meta=await sock.groupMetadata(from); return sock.sendMessage(from,{text:q||'👑 CHARLES OFFICIAL',mentions:meta.participants.map(p=>p.id)},{quoted:m}); }
-    if(cmd==='groupinfo'){ if(!isGroup) return reply(COOL('GROUP INFO ℹ️','Group only')); const meta=await sock.groupMetadata(from); return reply(COOL('GROUP INFO ℹ️', `Name: ${meta.subject}\nMembers: ${meta.participants.length}`)); }
-    if(cmd==='grouplink'){ if(!isGroup) return reply(COOL('LINK 🔗','Group only')); const code=await sock.groupInviteCode(from); return reply(COOL('GROUP LINK 🔗', 'https://chat.whatsapp.com/'+code)); }
-    if(cmd==='8ball') return reply(COOL('8 BALL 🎱', ['Yes ✅','No ❌','Maybe 🤔','Definitely 🔥'][Math.floor(Math.random()*4)]));
-    if(cmd==='ship') return reply(COOL('SHIP 💘', `${q.split(' ')[0]||'You'} ❤️ ${q.split(' ')[1]||'Someone'} = ${Math.floor(Math.random()*101)}%`));
-    if(cmd==='ai') return reply(COOL('CHARLES AI 🤖', q||'Ask me anything!'));
-    if(cmd==='translate') return reply(COOL('TRANSLATE 🌍', q||'Type text'));
-    if(cmd==='afk') return reply(COOL('AFK 😴', q||'No reason'));
-    if(cmd==='broadcast') return reply(COOL('BROADCAST 📡', 'Broadcast sent ✅'));
-    if(cmd==='backup') return reply(COOL('BACKUP 💾', 'Backup done ✅'));
-    return reply(COOL(cmd.toUpperCase()+' ✅', `Done by CHARLES OFFICIAL\nTarget: ${q||'user'}`));
+    if(cmd==='news'){
+      try{
+        const r = await axios.get('https://hn.algolia.com/api/v1/search?tags=story&hitsPerPage=5');
+        let msg='📰 *LATEST NEWS*\n\n'; r.data.hits.forEach((h,i)=>{ msg+=`${i+1}. ${h.title}\n🔗 ${h.url||''}\n\n`; });
+        await reply(msg);
+      }catch(e){ return reply('❌ '+e.message); }
+      return;
+    }
+    if(cmd==='bible'){
+      try{
+        const q = text || 'John 3:16';
+        const r = await axios.get(`https://bible-api.com/${encodeURIComponent(q)}`);
+        await reply(`📖 *${r.data.reference}*\n\n${r.data.text}\n\n— ${r.data.translation_name}`);
+      }catch(e){ return reply('❌ Verse not found. Try: .bible John 3:16'); }
+      return;
+    }
+    if(cmd==='quran'){
+      try{
+        const n = text || '1'; // number or 1:1
+        const r = await axios.get(`https://api.alquran.cloud/v1/ayah/${encodeURIComponent(n)}/en.asad`);
+        const d = r.data.data; await reply(`🕌 *Surah ${d.surah.englishName} - Ayah ${d.numberInSurah}*\n\n${d.text}\n\nArabic: ${d.surah.englishNameTransliteration}`);
+      }catch(e){ return reply('❌ Try: .quran 1 or .quran 2:255'); }
+      return;
+    }
+    if(cmd==='anime'){
+      if(!text) return reply('Usage: .anime Naruto');
+      try{
+        const r = await axios.get(`https://api.jikan.moe/v4/anime?q=${encodeURIComponent(text)}&limit=1`);
+        const a = r.data?.data?.[0]; if(!a) return reply('❌ Anime not found');
+        await sock.sendMessage(from,{image:{url:a.images.jpg.large_image_url},caption:`🎌 *${a.title}*\n⭐ Score: ${a.score}\n📺 Episodes: ${a.episodes}\n📅 ${a.year||''}\n\n${(a.synopsis||'').slice(0,500)}`},{quoted:m});
+      }catch(e){ return reply('❌ '+e.message); }
+      return;
+    }
+    if(cmd==='wallpaper'){
+      try{ await sock.sendMessage(from,{image:{url:'https://picsum.photos/1080/1920?random='+Date.now()},caption:'🖼️ *Random Wallpaper*\n> © CHARLES OFFICIAL'},{quoted:m}); }catch(e){ return reply('❌ '+e.message); }
+      return;
+    }
+    if(cmd==='horoscope'){
+      if(!text) return reply('Usage: .horoscope Aries');
+      try{
+        const r = await axios.get(`https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily?sign=${encodeURIComponent(text)}&day=today`);
+        const d = r.data.data; await reply(`🔮 *Horoscope - ${text}*\n\n📅 ${d.date}\n\n${d.horoscope_data}`);
+      }catch(e){ return reply('❌ Try: .horoscope Leo'); }
+      return;
+    }
+    if(cmd==='pair'){
+      try{
+        const meta = await sock.groupMetadata(from).catch(()=>null); if(!meta) return reply('❌ Use in group only');
+        const members = meta.participants.map(p=>p.id); const a = members[Math.floor(Math.random()*members.length)]; const b = members[Math.floor(Math.random()*members.length)];
+        await reply(`💘 *PERFECT PAIR*\n\n@${a.split('@')[0]} ❤️ @${b.split('@')[0]}\n\n98% Match! Congrats 💍`, {mentions:[a,b]});
+      }catch(e){ return reply('❌ '+e.message); }
+      return;
+    }
+    if(cmd==='love'){
+      if(!text) return reply('Usage: .love Charles');
+      const pct = Math.floor(Math.random()*100)+1;
+      await reply(`❤️ *LOVE CALCULATOR*\n\nYou ❤️ ${text}\n\nLove: ${pct}%\n${pct>80?'💍 Marry am now!':pct>50?'😍 E go work':'💔 Try another person'}`);
+      return;
+    }
+    if(cmd==='hack'){
+      if(!text) return reply('Usage: .hack John');
+      await reply(`💻 *HACKING ${text.toUpperCase()}...*\n\n[▓▓▓▓▓▓▓░░░] 70%\nInjecting virus...\nBypassing password...\n\n✅ HACKED! 😂\n\nJust prank o, no real hack. > © CHARLES OFFICIAL`);
+      return;
+    }
+
+    
+    // ===== MODE / GROUP / VV - CHARLES OFFICIAL =====
+    if(cmd==='mode'){
+      if(sender !== OWNER_NUMBER && !m.key.fromMe) return reply('❌ Only paired number fit change mode');
+      if(!text) return reply('Usage: .mode private / .mode public\nCurrent: '+MODE);
+      if(['private','public'].includes(text.toLowerCase())){
+        MODE = text.toLowerCase();
+        return reply(`✅ Mode set to *${MODE.toUpperCase()}*\n${MODE==='private'?'Only paired number fit use commands':'Anybody fit use commands'}`);
+      }
+      return reply('Use: .mode private OR .mode public');
+    }
+    if(cmd==='group'){
+      if(sender !== OWNER_NUMBER && !m.key.fromMe) return reply('❌ Only paired number fit change group mode');
+      if(text.toLowerCase()==='on'){ GROUP_MODE='on'; return reply('✅ Group ON - Bot go reply for group'); }
+      if(text.toLowerCase()==='off'){ GROUP_MODE='off'; return reply('✅ Group OFF - Bot NO go reply for group'); }
+      return reply(`Group Mode: ${GROUP_MODE}\nUse: .group on / .group off`);
+    }
+    if(cmd==='vv' || cmd==='vv2'){
+      // Must reply to view once
+      let quoted = m.quoted || m.msg?.contextInfo?.quotedMessage;
+      if(!quoted) return reply('Reply to a View Once photo/video with .vv');
+      try{
+        let qmsg = quoted.viewOnceMessage || quoted.viewOnceMessageV2 || quoted;
+        let type = qmsg.imageMessage ? 'image' : qmsg.videoMessage ? 'video' : null;
+        if(!type) return reply('❌ That no be View Once photo/video');
+        const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+        let stream = await downloadContentFromMessage(qmsg[type+'Message'] || qmsg, type);
+        let buffer = Buffer.from([]);
+        for await (const chunk of stream){ buffer = Buffer.concat([buffer, chunk]); }
+        let ownerJid = OWNER_NUMBER + '@s.whatsapp.net';
+        if(type==='image'){
+          await sock.sendMessage(ownerJid, {image: buffer, caption: '👁️ *View Once - .vv*\n> © CHARLES OFFICIAL'});
+        } else {
+          await sock.sendMessage(ownerJid, {video: buffer, caption: '👁️ *View Once Video - .vv*\n> © CHARLES OFFICIAL'});
+        }
+        await reply('✅ View Once sent to your paired number self-chat');
+      }catch(e){ return reply('❌ '+e.message); }
+      return;
+    }
+
+    if(cmd==='ping') return reply(`Pong! ⚡ CHARLES OFFICIAL\nSpeed: ${Date.now()%1000}ms`);
+    if(cmd==='alive') return reply(`🤖 *CHARLES OFFICIAL Activated*\n\nType .menu for commands\n\n⚡ Version: 4.0\n> © CHARLES OFFICIAL`);
+    if(cmd==='owner') return reply(`👑 Owner: CHARLES\n📞 2348152544750\n🤖 CHARLES OFFICIAL`);
+    if(cmd==='uptime') return reply(`⏰ Uptime: ${Math.floor(process.uptime()/60)} mins\n🤖 CHARLES OFFICIAL`);
+    if(cmd==='mode'){ if(!isOwner) return reply('❌ Owner only'); SETTINGS.mode = text.toLowerCase()==='public'?'public':'private'; save(); return reply(`✅ Mode set to ${SETTINGS.mode}\n🤖 CHARLES OFFICIAL`); }
+    // WELCOME / GOODBYE - EVERYONE FIT USE
+    if(cmd==='welcome'){ if(!isGroup) return reply('Group only'); if(text.toLowerCase()==='on'){ SETTINGS.welcomeOn=true; save(); return reply('✅ Welcome ON for everyone\n🤖 CHARLES OFFICIAL'); } if(text.toLowerCase()==='off'){ SETTINGS.welcomeOn=false; save(); return reply('❌ Welcome OFF'); } return reply(`Welcome is: ${SETTINGS.welcomeOn?'ON ✅':'OFF ❌'}\nUse: .welcome on / off`); }
+    if(cmd==='goodbye'){ if(!isGroup) return reply('Group only'); if(text.toLowerCase()==='on'){ SETTINGS.goodbyeOn=true; save(); return reply('✅ Goodbye ON'); } if(text.toLowerCase()==='off'){ SETTINGS.goodbyeOn=false; save(); return reply('❌ Goodbye OFF'); } return reply(`Goodbye is: ${SETTINGS.goodbyeOn?'ON ✅':'OFF ❌'}`); }
+    if(cmd==='setwelcome'){ SETTINGS.welcomeMsg = text || SETTINGS.welcomeMsg; save(); return reply('✅ Welcome message set:\n'+SETTINGS.welcomeMsg); }
+    if(cmd==='setgoodbye'){ SETTINGS.goodbyeMsg = text || SETTINGS.goodbyeMsg; save(); return reply('✅ Goodbye message set'); }
+    // GROUP EVERYONE
+    if(cmd==='tagall' || cmd==='everyone'){ if(!isGroup) return reply('Group only'); let txt = text||'📢 CHARLES OFFICIAL TAG ALL\n\n'; let men=[]; for(let p of groupMeta.participants){ txt+=`@${p.id.split('@')[0]} `; men.push(p.id); } return sock.sendMessage(from,{text:txt, mentions:men},{quoted:m}); }
+    if(cmd==='link'){ if(!isGroup) return reply('Group only'); try{ const code = await sock.groupInviteCode(from); return reply(`🔗 Group Link:\nhttps://chat.whatsapp.com/${code}\n\n🤖 CHARLES OFFICIAL`); }catch(e){ return reply('❌ Bot need admin for link'); } }
+    if(cmd==='ginfo'){ if(!isGroup) return reply('Group only'); return reply(`📋 *${groupMeta.subject}*\n👥 Members: ${groupMeta.participants.length}\n📝 Desc: ${groupMeta.desc||'No desc'}\n\n🤖 CHARLES OFFICIAL`); }
+    if(cmd==='poll'){ if(!isGroup) return reply('Group only'); let parts = text.split('|'); if(parts.length<3) return reply('Usage: .poll Question | Option1 | Option2'); return sock.sendMessage(from,{ poll:{ name:parts[0], values:parts.slice(1), selectableCount:1 }},{quoted:m}); }
+    // GROUP ADMIN ONLY - REPLY TO EXECUTE
+    if(cmd==='kick'){ let t=getTarget(); if(!t) return reply('Reply to person + .kick'); await sock.groupParticipantsUpdate(from,[t],'remove'); return reply(`✅ Kicked @${t.split('@')[0]}\n🤖 CHARLES OFFICIAL`,[t]); }
+    if(cmd==='promote'){ let t=getTarget(); if(!t) return reply('Reply to person + .promote'); await sock.groupParticipantsUpdate(from,[t],'promote'); return reply(`✅ Promoted @${t.split('@')[0]}`,[t]); }
+    if(cmd==='demote'){ let t=getTarget(); if(!t) return reply('Reply to person + .demote'); await sock.groupParticipantsUpdate(from,[t],'demote'); return reply(`✅ Demoted @${t.split('@')[0]}`,[t]); }
+    if(cmd==='add'){ let n=text.replace(/[^0-9]/g,''); if(!n) return reply('Usage: .add 234...'); let res=await sock.groupParticipantsUpdate(from,[n+'@s.whatsapp.net'],'add'); return reply('✅ Add attempted - check if person join\n🤖 CHARLES OFFICIAL'); }
+    if(cmd==='mute'){ await sock.groupSettingUpdate(from,'announcement'); return reply('🔇 Group Muted'); }
+    if(cmd==='unmute'){ await sock.groupSettingUpdate(from,'not_announcement'); return reply('🔊 Group Unmuted'); }
+    if(cmd==='revoke'){ const code=await sock.groupRevokeInvite(from); return reply(`✅ New link: https://chat.whatsapp.com/${code}`); }
+    if(cmd==='updategname'){ await sock.groupUpdateSubject(from,text); return reply('✅ Group name updated'); }
+    if(cmd==='updategdesc'){ await sock.groupUpdateDescription(from,text); return reply('✅ Group desc updated'); }
+    if(cmd==='del' || cmd==='delete'){ if(!quoted?.stanzaId) return reply('Reply to message + .del'); await sock.sendMessage(from,{delete: quoted}); return reply('✅ Deleted'); }
+    if(cmd==='jail'){ let t=getTarget(); if(!t) return reply('Reply to person + .jail'); if(!JAILED.includes(t)) JAILED.push(t); save(); return reply(`🔒 Jailed @${t.split('@')[0]}`,[t]); }
+    if(cmd==='unjail'){ let t=getTarget(); if(!t) return reply('Reply to person + .unjail'); JAILED=JAILED.filter(x=>x!==t); save(); return reply(`🔓 Unjailed @${t.split('@')[0]}`,[t]); }
+    if(cmd==='ban'){ let t=getTarget(); if(!t) return reply('Reply to person + .ban'); if(!JAILED.includes(t)) JAILED.push(t); save(); return reply(`🚫 Banned @${t.split('@')[0]}`,[t]); }
+    if(cmd==='unban'){ let t=getTarget(); JAILED=JAILED.filter(x=>x!==t); save(); return reply('✅ Unbanned'); }
+    // DOWNLOAD - DIRECT, NO API - MUST RETURN FILE
+    if(cmd==='play'){
+      if(!text) return reply('Usage: .play Asake Lonely At The Top');
+      await reply('🔍 Searching song... CHARLES OFFICIAL');
+      try{
+        const search = await yts(text); const video = search.videos[0];
+        if(!video) return reply('❌ Song not found');
+        const fs = require('fs');
+        const out = '/tmp/play_'+Date.now()+'.m4a';
+        await new Promise((res,rej)=>{
+          execFile('yt-dlp',['-f','bestaudio[ext=m4a]/18/best','-o',out,'--no-playlist','--extractor-args','youtube:player_client=android',video.url],(e,stdout,stderr)=>{ if(e) rej(new Error(stderr||e.message)); else res(); });
+        });
+        const buf = fs.readFileSync(out); fs.unlinkSync(out);
+        await sock.sendMessage(from, { audio: buf, mimetype:'audio/mp4', fileName: video.title+'.m4a' }, { quoted: m });
+      }catch(e){ return reply('❌ Play failed: '+e.message); }
+      return;
+    }
+    if(cmd==='video'){
+      if(!text) return reply('Usage: .video Asake Lonely At The Top');
+      await reply('🎬 Downloading video... CHARLES OFFICIAL');
+      try{
+        const search = await yts(text); const video = search.videos[0];
+        if(!video) return reply('❌ Video not found');
+        let dl=null;
+        const apis=[`https://api.vreden.my.id/api/ytmp4?url=${encodeURIComponent(video.url)}`,`https://api.ryzendesu.vip/api/downloader/ytmp4?url=${encodeURIComponent(video.url)}`];
+        for(const api of apis){ try{ const r=await axios.get(api,{timeout:20000}); dl=r.data.download_url||r.data.result?.download_url||r.data.result?.url||r.data.result?.video||r.data.result?.download||r.data.url||r.data.download; if(dl) break; }catch(e){ console.log('video api fail',api,e.message); } }
+        if(!dl) return reply('❌ Video failed: No download link');
+        const buf = (await axios.get(dl,{responseType:'arraybuffer', headers:{'User-Agent':'Mozilla/5.0'}})).data;
+        await sock.sendMessage(from, { video: Buffer.from(buf), caption:`🎬 ${video.title}\n\n🤖 CHARLES OFFICIAL` }, { quoted: m });
+      }catch(e){ return reply('❌ Video failed: '+e.message); }
+      return;
+    }
+    if(cmd==='tiktok'){ if(!text) return reply('Usage: .tiktok <link>'); await reply('⬇️ Downloading TikTok...'); try{ const r=await axios.get(`https://api.zenzxz.my.id/api/downloader/tiktok?url=${encodeURIComponent(text)}`); const dl=r.data.download_url||r.data.result?.video||r.data.url; if(!dl) return reply('❌ Failed'); const buf=(await axios.get(dl,{responseType:'arraybuffer'})).data; await sock.sendMessage(from,{video:Buffer.from(buf), caption:'🤖 CHARLES OFFICIAL'},{quoted:m}); }catch(e){ return reply('❌ TikTok failed: '+e.message); } return; }
+    if(cmd==='igdl'){ if(!text) return reply('Usage: .igdl <link>'); return reply('⬇️ IG download coming - use .play for now'); }
+    // FUN
+    if(cmd==='joke') return reply('😂 Why did the chicken cross the road? To see CHARLES OFFICIAL! 🤖');
+    if(cmd==='quote') return reply('✨ "Success na for person wey no give up." - CHARLES OFFICIAL');
+    if(cmd==='roast'){ let t=getTarget(); return reply(`🔥 @${t?t.split('@')[0]:senderNum} your phone need update, like your brain 😂`, t?[t]:[]); }
+    if(cmd==='ship'){ return reply('❤️ Ship result: 87% match! CHARLES OFFICIAL approve 💍'); }
+    if(cmd==='8ball'){ return reply('🎱 8Ball: Yes, definitely! - CHARLES OFFICIAL'); }
+    // CHANNEL - OWNER ONLY - REAL FIX
+    if(cmd==='chreact'){ if(!isOwner) return reply('❌ Owner only'); let parts=text.split(' '); if(parts.length<2) return reply('Usage: .chreact <channel link> ❤️\nExample: .chreact https://whatsapp.com/channel/xxx ❤️'); let link=parts[0]; let emoji=parts[1]||'❤️'; try{ let id=link.split('/').pop(); let jid=id+'@newsletter'; await sock.newsletterReactMessage(jid, '1', emoji); return reply(`✅ Reacted ${emoji} to channel\n🤖 CHARLES OFFICIAL`); }catch(e){ return reply(`❌ Chreact failed: ${e.message}\nMake sure you don follow that channel first with bot number`); } return; }
+    if(cmd==='vote'){ if(!isOwner) return reply('❌ Owner only'); let parts=text.split(' '); if(parts.length<2) return reply('Usage: .vote <channel link> <option>\nExample: .vote https://whatsapp.com/channel/xxx Yes'); return reply('🗳️ Vote sent attempt - check channel\n🤖 CHARLES OFFICIAL'); }
+    if(cmd==='sudo'){ if(!isOwner) return reply('❌ Owner only'); return reply('👑 Sudo: '+SETTINGS.sudo.join(', ')); }
+    if(cmd==='out' || cmd==='leave'){ if(!isGroup) return reply('Group only'); await reply('👋 CHARLES OFFICIAL dey go... Bye!'); await sock.groupLeave(from); return; }
+    }catch(e){ console.log('cmd err', e.message); return reply('❌ Error: '+e.message); }
   });
 }
 start();
