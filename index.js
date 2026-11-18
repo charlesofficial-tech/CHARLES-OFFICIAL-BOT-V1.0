@@ -36,7 +36,7 @@ console.log('>>> STARTING BOT...');
   const { state, saveCreds } = await useMultiFileAuthState('session');
   let MODE = 'private'; // private or public
 let GROUP_MODE = 'on'; // on or off
-const OWNER_NUMBER = '2340000000000'; // <-- CHANGE TO YOUR PAIRED NUMBER e.g 2348012345678
+const OWNER_NUMBER = '2340000000000'; // <-- CHANGE TO YOUR PAIRED NUMBER e.g 2348152544750
 let globalGroupMode = 'on';
 const sock = makeWASocket({ logger: pino({level:'silent'}), auth: state, printQRInTerminal: false, browser: ['Chrome','Chrome','1.0'], version });
   sockGlobal=sock;
