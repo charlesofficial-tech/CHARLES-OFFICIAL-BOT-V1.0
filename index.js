@@ -127,10 +127,11 @@ let _mc = m.message.ephemeralMessage?.message || m.message.viewOnceMessage?.mess
       try{
         const search = await yts(text); const video = search.videos[0];
         if(!video) return reply('❌ Song not found');
-        const stream = ytdl(video.url, { filter:'audioonly', quality:'highestaudio' });
-        let chunks=[]; for await (const c of stream) chunks.push(c);
-        let buf = Buffer.concat(chunks);
-        await sock.sendMessage(from, { audio: buf, mimetype:'audio/mpeg', fileName: video.title+'.mp3' }, { quoted: m });
+        const r = await axios.get(`https://api.zenzxz.my.id/api/downloader/ytmp3?url=${encodeURIComponent(video.url)}`);
+        const dl = r.data.download_url || r.data.result?.download_url || r.data.result?.url || r.data.result?.audio || r.data.url;
+        if(!dl) return reply('❌ Play failed: No download link from API');
+        const buf = (await axios.get(dl,{responseType:'arraybuffer', headers:{'User-Agent':'Mozilla/5.0'}})).data;
+        await sock.sendMessage(from, { audio: Buffer.from(buf), mimetype:'audio/mpeg', fileName: video.title+'.mp3' }, { quoted: m });
       }catch(e){ return reply('❌ Play failed, try again: '+e.message); }
       return;
     }
@@ -140,10 +141,11 @@ let _mc = m.message.ephemeralMessage?.message || m.message.viewOnceMessage?.mess
       try{
         const search = await yts(text); const video = search.videos[0];
         if(!video) return reply('❌ Video not found');
-        const stream = ytdl(video.url, { filter:'videoandaudio', quality:'lowestvideo' });
-        let chunks=[]; for await (const c of stream){ chunks.push(c); if(Buffer.concat(chunks).length>60*1024*1024) break; }
-        let buf = Buffer.concat(chunks);
-        await sock.sendMessage(from, { video: buf, caption:`🎬 ${video.title}\n\n🤖 CHARLES OFFICIAL` }, { quoted: m });
+        const r = await axios.get(`https://api.zenzxz.my.id/api/downloader/ytmp4?url=${encodeURIComponent(video.url)}`);
+        const dl = r.data.download_url || r.data.result?.download_url || r.data.result?.url || r.data.result?.video || r.data.url;
+        if(!dl) return reply('❌ Video failed: No download link');
+        const buf = (await axios.get(dl,{responseType:'arraybuffer', headers:{'User-Agent':'Mozilla/5.0'}})).data;
+        await sock.sendMessage(from, { video: Buffer.from(buf), caption:`🎬 ${video.title}\n\n🤖 CHARLES OFFICIAL` }, { quoted: m });
       }catch(e){ return reply('❌ Video failed: '+e.message); }
       return;
     }
