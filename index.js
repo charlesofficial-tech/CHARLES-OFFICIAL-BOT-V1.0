@@ -89,7 +89,49 @@ let _mc = m.message.ephemeralMessage?.message || m.message.viewOnceMessage?.mess
     try{
     // MAIN
     if(cmd==='menu' || cmd==='help'){
-      return reply(`╭─❍══ CHARLES OFFICIAL ══⊷❍\n┇◆ Owner: CHARLES\n┇◆ Mode: ${SETTINGS.mode}\n┇◆ Prefix: .\n┇◆ Version: 4.0\n╰══════════⍟\n\n👥 GROUP - EVERYONE:\n.tagall .link .ginfo .poll .welcome on/off .goodbye on/off .setwelcome .setgoodbye\n\n🔒 GROUP - ADMIN ONLY:\n.kick .promote .demote .mute .unmute .add .revoke .updategname .updategdesc .accept .reject .ban .jail\n_Reply to person + command, no need @_\n\n⬇️ DOWNLOAD - DIRECT:\n.play <song> - Download song direct\n.video <film> - Download video direct\n.tiktok <link> .igdl <link>\n\n❤️ CHANNEL - OWNER ONLY:\n.chreact <channel link> <emoji>\n.vote <channel link> <option>\n\n🎉 FUN:\n.joke .quote .roast .ship .8ball\n\n⚙️ OWNER:\n.mode public/private .sudo .alive .ping\n\n> © Powered by CHARLES OFFICIAL`);
+      return reply(`╭─❍══ CHARLES OFFICIAL ══⊷❍
+┇◆ Owner: CHARLES
+┇◆ Mode: private
+┇◆ Prefix: .
+┇◆ Version: 4.0
+╰══════════⍟
+
+👥 GROUP - EVERYONE:
+.tagall .link .ginfo .poll .welcome on/off .goodbye on/off .setwelcome .setgoodbye
+
+🔒 GROUP - ADMIN ONLY:
+.kick .promote .demote .mute .unmute .add .revoke .updategname .updategdesc .accept .reject .ban .jail
+_Reply to person + command, no need @_
+
+⬇️ DOWNLOAD - DIRECT:
+.play <song> - Download song direct
+.video <film> - Download video direct
+.tiktok <link> .igdl <link> .fbdl <link> .ytdl <link> .song <song>
+
+❤️ CHANNEL - OWNER ONLY:
+.chreact <channel link> <emoji>
+.vote <channel link> <option>
+.chinfo <channel link> .chfollow <channel link>
+
+🎉 FUN:
+.joke .quote .roast .ship .8ball .truth .dare .fact .meme .pickup
+
+🤖 AI:
+.ai <ask> .gpt <ask> .img <prompt> .ask <question>
+
+🛠️ TOOLS:
+.sticker .sticker2 .toimg .tomp3 .tovn .ss <link> .short <link> .qr <text> .translate <text> .weather <city> .calc <2+2>
+
+👤 PROFILE:
+.profile .owner .me .rank .level
+
+🆕 NEW:
+.lyrics <song> .news .bible <verse> .quran <surah> .anime <name> .wallpaper .horoscope <sign> .pair .love <name> .hack <name>
+
+⚙️ OWNER:
+.mode public/private .sudo .alive .ping .restart .update .broadcast .block .unblock
+
+> © Powered by CHARLES OFFICIAL`);
     }
     
     // ===== 10 NEW COMMANDS - CHARLES OFFICIAL =====
