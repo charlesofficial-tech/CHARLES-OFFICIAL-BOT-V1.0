@@ -98,8 +98,8 @@ const sock = makeWASocket({ logger: pino({level:'silent'}), auth: state, printQR
     const from = m.key.remoteJid;
     const isGroup = from.endsWith('@g.us');
     const sender = m.key.participant || m.key.remoteJid;
-    const senderNum = sender.split('@')[0];
-    const isOwner = SETTINGS.sudo.includes(senderNum) || senderNum==='2348152544750' || !isGroup && senderNum==='2348152544750';
+senderNum = sender.split('@')[0];
+isOwner = SETTINGS.sudo.includes(senderNum) || senderNum==='2348152544750' || !isGroup && senderNum==='2348152544750';
     // JAILED CHECK
     if(isGroup && JAILED.includes(sender) && !isOwner) return;
     // REPLY TARGET - reply to message = target, no need @user
