@@ -33,7 +33,11 @@ async function start(){
 console.log('>>> STARTING BOT...');
   const { version } = await fetchLatestBaileysVersion();
   const { state, saveCreds } = await useMultiFileAuthState('session');
-  const sock = makeWASocket({ logger: pino({level:'silent'}), auth: state, printQRInTerminal: false, browser: ['Chrome','Chrome','1.0'], version });
+  let MODE = 'private'; // private or public
+let GROUP_MODE = 'on'; // on or off
+const OWNER_NUMBER = '2340000000000'; // <-- CHANGE TO YOUR PAIRED NUMBER e.g 2348012345678
+let globalGroupMode = 'on';
+const sock = makeWASocket({ logger: pino({level:'silent'}), auth: state, printQRInTerminal: false, browser: ['Chrome','Chrome','1.0'], version });
   sockGlobal=sock;
   sock.ev.on('creds.update', saveCreds);
   if(!sock.authState.creds.registered && !process.env.SESSION_ID){ setTimeout(async()=>{ try{ const code=await sock.requestPairingCode('2348152544750'); console.log('=== PAIRING CODE: '+code+' ==='); }catch(e){} }, 3000); }
@@ -49,6 +53,47 @@ console.log('>>> STARTING BOT...');
   });
   sock.ev.on('messages.upsert', async ({messages})=>{
     const m = messages[0]; console.log("MSG:", m.key.remoteJid); if(!m.message) return;
+
+    // ===== CHARLES OFFICIAL FIX V2 =====
+    let senderNum = String(m.sender || m.key?.participant || m.key?.remoteJid || "").split('@')[0];
+    let isGroupMsg = String(from || "").endsWith('@g.us');
+    let isOwner = senderNum === OWNER_NUMBER || m.key?.fromMe;
+    let _cmdRaw = String(body || "").split(' ')[0] || "";
+    let _cmd = _cmdRaw.replace(/^[.!#]/,'').toLowerCase();
+    let _text = String(body || "").split(' ').slice(1).join(' ');
+    if(isGroupMsg && GROUP_MODE==='off' && _cmd!=='group'){ return; }
+    if(MODE==='private' && !isOwner){ return; }
+    if(_cmd==='mode'){
+      if(!isOwner){ await sock.sendMessage(from,{text:'❌ Only paired number'}); return; }
+      if(!_text){ await sock.sendMessage(from,{text:'Use: .mode private / .mode public\nCurrent: '+MODE}); return; }
+      if(['private','public'].includes(_text.toLowerCase())){ MODE=_text.toLowerCase(); await sock.sendMessage(from,{text:'✅ Mode: '+MODE.toUpperCase()}); return; }
+    }
+    if(_cmd==='group'){
+      if(!isOwner){ await sock.sendMessage(from,{text:'❌ Only paired number'}); return; }
+      if(_text.toLowerCase()==='on'){ GROUP_MODE='on'; await sock.sendMessage(from,{text:'✅ Group ON'}); return; }
+      if(_text.toLowerCase()==='off'){ GROUP_MODE='off'; await sock.sendMessage(from,{text:'✅ Group OFF'}); return; }
+      await sock.sendMessage(from,{text:'Group: '+GROUP_MODE+'\nUse: .group on / .group off'}); return;
+    }
+    if(_cmd==='vv' || _cmd==='vv2'){
+      let quoted = m.quoted || m.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+      if(!quoted){ await sock.sendMessage(from,{text:'Reply to View Once with .vv'}); return; }
+      try{
+        let q = quoted.viewOnceMessage || quoted.viewOnceMessageV2 || quoted;
+        let isImg = q.imageMessage ? 'image' : q.videoMessage ? 'video' : null;
+        if(!isImg){ await sock.sendMessage(from,{text:'❌ No be View Once'}); return; }
+        const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+        let stream = await downloadContentFromMessage(q[isImg+'Message'] || q, isImg);
+        let buf = Buffer.from([]);
+        for await (const chunk of stream){ buf = Buffer.concat([buf, chunk]); }
+        let ownerJid = OWNER_NUMBER + '@s.whatsapp.net';
+        if(isImg==='image') await sock.sendMessage(ownerJid,{image:buf, caption:'👁️ View Once .vv\n© CHARLES OFFICIAL'});
+        else await sock.sendMessage(ownerJid,{video:buf, caption:'👁️ View Once Video .vv\n© CHARLES OFFICIAL'});
+        await sock.sendMessage(from,{text:'✅ Sent to your paired number self-chat'});
+      }catch(e){ await sock.sendMessage(from,{text:'❌ '+e.message}); }
+      return;
+    }
+    // ===== END FIX V2 =====
+
     const from = m.key.remoteJid;
     const isGroup = from.endsWith('@g.us');
     const sender = m.key.participant || m.key.remoteJid;
@@ -206,6 +251,46 @@ _Reply to person + command, no need @_
     if(cmd==='hack'){
       if(!text) return reply('Usage: .hack John');
       await reply(`💻 *HACKING ${text.toUpperCase()}...*\n\n[▓▓▓▓▓▓▓░░░] 70%\nInjecting virus...\nBypassing password...\n\n✅ HACKED! 😂\n\nJust prank o, no real hack. > © CHARLES OFFICIAL`);
+      return;
+    }
+
+    
+    // ===== MODE / GROUP / VV - CHARLES OFFICIAL =====
+    if(cmd==='mode'){
+      if(sender !== OWNER_NUMBER && !m.key.fromMe) return reply('❌ Only paired number fit change mode');
+      if(!text) return reply('Usage: .mode private / .mode public\nCurrent: '+MODE);
+      if(['private','public'].includes(text.toLowerCase())){
+        MODE = text.toLowerCase();
+        return reply(`✅ Mode set to *${MODE.toUpperCase()}*\n${MODE==='private'?'Only paired number fit use commands':'Anybody fit use commands'}`);
+      }
+      return reply('Use: .mode private OR .mode public');
+    }
+    if(cmd==='group'){
+      if(sender !== OWNER_NUMBER && !m.key.fromMe) return reply('❌ Only paired number fit change group mode');
+      if(text.toLowerCase()==='on'){ GROUP_MODE='on'; return reply('✅ Group ON - Bot go reply for group'); }
+      if(text.toLowerCase()==='off'){ GROUP_MODE='off'; return reply('✅ Group OFF - Bot NO go reply for group'); }
+      return reply(`Group Mode: ${GROUP_MODE}\nUse: .group on / .group off`);
+    }
+    if(cmd==='vv' || cmd==='vv2'){
+      // Must reply to view once
+      let quoted = m.quoted || m.msg?.contextInfo?.quotedMessage;
+      if(!quoted) return reply('Reply to a View Once photo/video with .vv');
+      try{
+        let qmsg = quoted.viewOnceMessage || quoted.viewOnceMessageV2 || quoted;
+        let type = qmsg.imageMessage ? 'image' : qmsg.videoMessage ? 'video' : null;
+        if(!type) return reply('❌ That no be View Once photo/video');
+        const { downloadContentFromMessage } = require('@whiskeysockets/baileys');
+        let stream = await downloadContentFromMessage(qmsg[type+'Message'] || qmsg, type);
+        let buffer = Buffer.from([]);
+        for await (const chunk of stream){ buffer = Buffer.concat([buffer, chunk]); }
+        let ownerJid = OWNER_NUMBER + '@s.whatsapp.net';
+        if(type==='image'){
+          await sock.sendMessage(ownerJid, {image: buffer, caption: '👁️ *View Once - .vv*\n> © CHARLES OFFICIAL'});
+        } else {
+          await sock.sendMessage(ownerJid, {video: buffer, caption: '👁️ *View Once Video - .vv*\n> © CHARLES OFFICIAL'});
+        }
+        await reply('✅ View Once sent to your paired number self-chat');
+      }catch(e){ return reply('❌ '+e.message); }
       return;
     }
 
