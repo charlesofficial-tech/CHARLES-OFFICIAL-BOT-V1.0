@@ -47,7 +47,6 @@ console.log('✅ PIC UP + COMMANDS LOADED');
 
 
 const pino = require('pino');
-const fs = require('fs');
 const yts = require('yt-search');
 const ytdl = require('@distube/ytdl-core').default || require('@distube/ytdl-core');
 const { execFile } = require('child_process');
@@ -373,7 +372,6 @@ _Reply to person + command, no need @_
       try{
         const search = await yts(text); const video = search.videos[0];
         if(!video) return reply('❌ Song not found');
-        const fs = require('fs');
         const out = '/tmp/play_'+Date.now()+'.m4a';
         await new Promise((res,rej)=>{
           execFile('yt-dlp',['-f','bestaudio[ext=m4a]/18/best','-o',out,'--no-playlist','--extractor-args','youtube:player_client=android',video.url],(e,stdout,stderr)=>{ if(e) rej(new Error(stderr||e.message)); else res(); });
